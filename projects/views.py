@@ -1,20 +1,34 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from .models import Project, Tag
-from .forms import ProjectForm
+from .forms import ProjectForm, ReviewForm
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from .utils import paginateProjects, searchProjects
 
 
 def projects(request):
-    projects = Project.objects.all()
-    context = {'projects': projects}
+    projects, search_query = searchProjects(request)
+    custom_range, projects = paginateProjects(request, projects, 6)
+    context = {'projects': projects, 'custom_range': custom_range, 'search_query': search_query }
     return render(request, 'projects/projects.html', context)
 
 
 def project(request, project_slug):
     project = Project.objects.get(slug=project_slug)
     tags = project.tags.all()
-    return render(request, 'projects/single-project.html', {'project': project})
+
+    form = ReviewForm()
+    if request.method == 'POST':
+        form = ReviewForm(request.POST)
+        review = form.save(commit=False)
+        review.project = project
+        review.owner = review.user.profile
+        review.save()
+        project.getVoteCount
+        messages.success(request, 'Your review was added')
+        return redirect('projec', project_slug=project.slug)
+
+    return render(request, 'projects/single-project.html', {'project': project, 'form': form})
 
 
 @login_required(login_url="login")

@@ -37,6 +37,21 @@ class Project(models.Model):
     def __str__(self):
         return self.title
 
+    @property
+    def reviewers(self):
+        queryset = self.review_set.all().value_list('owner_id', flat=True)
+        return queryset
+
+    @property
+    def getVoteCount(self):
+        reviews = self.review_set.all()
+        upVotes = reviews.filter(values='up').count()
+        totalVotes = reviews.count()
+        ratio = (upVotes / totalVotes) * 100
+        self.total_votes = totalVotes
+        self.votes_ratio = ratio
+        self.save()
+
 
 class Review(models.Model):
     project = models.ForeignKey(Project, on_delete=models.CASCADE)
